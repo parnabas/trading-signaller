@@ -1,0 +1,32 @@
+{
+    "params":
+    {
+        "currency_pairs" : 
+        [
+            "AUDUSD",
+            "NZDUSD",
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDJPY",
+            "NZDJPY",
+            "EURJPY",
+            "CADJPY",
+            "GBPJPY"
+        ],
+        "granularities":
+        [
+            "M15",
+            "H1",
+            "H2",
+            "H4",
+            "H6",
+            "H12",
+            "D",
+            "W"
+        ]
+    }
+}
+

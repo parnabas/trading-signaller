@@ -1,18 +1,21 @@
 import pandas as pd
-from tradingview_ta import TA_Handler, Interval, Exchange
-import tradingview_ta
 import time
 from dotenv import load_dotenv
 from pathlib import Path
+import oandapyV20
+import oandapyV20.endpoints.instruments as instruments
+import requests
 
-file_name = "C:/Users/wen_z/Documents/GitHub/trading-signaller/trading-signaller/text.xlsx"
-start_time = time.time()
-seconds = 1
 class EnvironmentVars:
     dotenv_path : Path = Path("src/constants.env")
     TELEGRAM_BOT_URL : str
     SIGNALLING_CHAT_ID : str
-    CURRENCYPAIRS_NAMES_DIR : str
+    PARAMS_DIR : str
+    API : str
+    STREAM_API : str 
+    ACCESS_TOKEN : str 
+    ACCOUNT_ID : str
+    SHEET_DIR : str
 
     def __init__(self) -> None:
         EnvironmentVars.init_env_variables()
@@ -20,7 +23,9 @@ class EnvironmentVars:
     @classmethod
     def __query_class_attributes(cls) -> bool:
         if (cls.TELEGRAM_BOT_URL == None or cls.SIGNALLING_CHAT_ID == None 
-        or cls.CURRENCYPAIRS_NAMES_DIR == None):
+        or cls.PARAMS_DIR == None or cls.API == None 
+        or cls.STREAM_API == None or cls.ACCESS_TOKEN == None
+        or cls.ACCOUNT_ID == None or cls.SHEET_DIR == None):
             return False
         return True
 
@@ -30,7 +35,13 @@ class EnvironmentVars:
         load_dotenv(dotenv_path = EnvironmentVars.dotenv_path)
         cls.TELEGRAM_BOT_URL = os.getenv("TELEGRAM_BOT_URL")
         cls.SIGNALLING_CHAT_ID = os.getenv("SIGNALLING_CHAT_ID")
-        cls.CURRENCYPAIRS_NAMES_DIR = os.getenv("CURRENCYPAIRS_NAMES_DIR")
+        cls.PARAMS_DIR = os.getenv("PARAMS_DIR")
+        cls.API = os.getenv("API")
+        cls.STREAM_API = os.getenv("STREAM_API")
+        cls.ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+        cls.ACCOUNT_ID = os.getenv("ACCOUNT_ID")
+        cls.SHEET_DIR = os.getenv("SHEET_DIR")
+
         try:
             if (not EnvironmentVars.__query_class_attributes()):
                 raise Exception("@Data.EnvironmentVars.init_env_variables(): Error! Failed to load environment variables")
@@ -39,37 +50,31 @@ class EnvironmentVars:
         print("Environment variables successfully loaded!")
 
 class Data(object):
+    currency_pairs : list[str]
+    granularities : list[str]
+    
     """Main class for financial data related functionalities"""
     def __init__(self) -> None:
-        pairs = __get_currency_pairs(self)
+        currency_pairs, granularities = __get_currency_pairs(self)
+        client = oandapyV20.API(EnvironmentVars.ACCESS_TOKEN)
         
-    def __get_currency_pairs(self) -> Dict[str, list[TA_Handler]]: 
-        currency_pair_names : list[str]
-        time_frame_names : list[str]
-
-        #Get names of currency pairs
+    def __get_currency_pairs(self) -> tuple[list[str], list[str]]: 
+        #Get desired currency pairs and time frames
         try:
-            with open(EnvironmentVars.CURRENCYPAIRS_NAMES_DIR) as file:    
-               currency_pair_names = json.load(file)
+            with open(EnvironmentVars.PARAMS_DIR) as file:    
+               return json.load(file)["currency_pairs"], json.load(file)["granularities"]
         except Exception as e:
             print("Exception thrown @ Data.__get_currency_pairs: File failed to load. Reason:")
             raise(e)
 
-        #Get currency pairs for each time frame
+    #Output example: https://oanda-api-v20.readthedocs.io/en/latest/endpoints/instruments/instrumentlist.html
+    def get_past_5_OHLC(self, currency_pair, granularity):
+        param = {5, granularity}
+        r = instruments.InstrumentsCandles(instrument=currency_pair, params=params)
+        client.request(r)
+        return r.response["candles"]
 
-        
+
+
+
     
-while True:
-    current_time = time.time()
-    elapsed_time = current_time - start_time
-
-    if elapsed_time > seconds:
-        PYEN = TA_Handler(
-            symbol="GBPJPY",
-            screener="forex",
-            exchange="FX_IDC",
-            interval=Interval.INTERVAL_15_MINUTES
-        )
-        analysis = PYEN.get_analysis()
-        print("GBPJPY Current Price:" + str(analysis.indicators["close"]))
-        start_time = time.time()    
