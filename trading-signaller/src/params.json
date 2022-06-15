@@ -3,18 +3,18 @@
     {
         "currency_pairs" : 
         [
-            "AUDUSD",
-            "NZDUSD",
-            "EURUSD",
-            "GBPUSD",
-            "USDJPY",
-            "USDCAD",
-            "USDCHF",
-            "AUDJPY",
-            "NZDJPY",
-            "EURJPY",
-            "CADJPY",
-            "GBPJPY"
+            "AUD_USD",
+            "NZD_USD",
+            "EUR_USD",
+            "GBP_USD",
+            "USD_JPY",
+            "USD_CAD",
+            "USD_CHF",
+            "AUD_JPY",
+            "NZD_JPY",
+            "EUR_JPY",
+            "CAD_JPY",
+            "GBP_JPY"
         ],
         "granularities":
         [

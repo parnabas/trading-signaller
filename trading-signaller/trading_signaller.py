@@ -1,8 +1,8 @@
 import win32com.client
-import os
 import oandapyV20
 import oandapyV20.endpoints.instruments as instruments
 import requests
+from Data import EnvironmentVars, Data
 
 
 API : str = "api-fxtrade.oanda.com"
@@ -11,8 +11,6 @@ ACCESS_TOKEN : str = "2d1604a423e54b47bf0678b1cec8e6c6-47058592ffbd025c7e07c3e5b
 ACCOUNT_ID : str = "101-003-22586265-001"
 client = oandapyV20.API(ACCESS_TOKEN)
 
-start_time = time.time()
-seconds = 1
 granularities = ["M15", "H1", "H2", "H4", "H6", "H12", "D", "W"]
 
 params = {
@@ -22,10 +20,11 @@ params = {
 
 
 def main():
-    r = instruments.InstrumentsCandles(instrument="AUD_USD", params=params)
-    
-    client.request(r)
-    print(r.response)
+    EnvironmentVars()
+
+    #r = instruments.InstrumentsCandles(instrument="AUD_USD", params=params)
+    #client.request(r)
+    #print(r.response)
 
     # Create an instance of the Excel Application & make it visible.
     ExcelApp = win32com.client.GetActiveObject("Excel.Application")
@@ -37,8 +36,9 @@ def main():
 
 
     # set the value property equal to the record array.
-    ExcelApp.Range("F2:I5").Interior.ColorIndex = 3;
+    #ExcelApp.Range("F2:I5").Interior.ColorIndex = 3;
 
+    print(Data().get_financial_data())
 
 
 if __name__ == "__main__":
