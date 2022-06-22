@@ -1,8 +1,7 @@
-import win32com.client
 import oandapyV20
 import oandapyV20.endpoints.instruments as instruments
 import requests
-from Data import EnvironmentVars, Data
+from Data import EnvironmentVars, Data, CandleCache
 
 
 API : str = "api-fxtrade.oanda.com"
@@ -21,24 +20,7 @@ params = {
 
 def main():
     EnvironmentVars()
-
-    #r = instruments.InstrumentsCandles(instrument="AUD_USD", params=params)
-    #client.request(r)
-    #print(r.response)
-
-    # Create an instance of the Excel Application & make it visible.
-    ExcelApp = win32com.client.GetActiveObject("Excel.Application")
-    ExcelApp.Visible = True
-
-    # Open the desired workbook
-    excel_wkbk = ExcelApp.Workbooks(1)
-    print(excel_wkbk.Name)
-
-
-    # set the value property equal to the record array.
-    #ExcelApp.Range("F2:I5").Interior.ColorIndex = 3;
-
-    print(Data().get_financial_data())
+    Data.update_excel_sheet()
 
 
 if __name__ == "__main__":
