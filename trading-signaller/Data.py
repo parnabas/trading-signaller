@@ -1,11 +1,11 @@
 import pandas as pd
 import os
 import json
-import time
 import win32com.client
 from dotenv import load_dotenv
 from pathlib import Path
 from dataclasses import dataclass, field
+from datetime import datetime
 import oandapyV20
 import oandapyV20.endpoints.instruments as instruments
 import requests
@@ -75,10 +75,10 @@ class CandleData:
         self.close : str = close;
    
     def __repr__(self) -> str:
-        return self.high + " / " + self.low + " / " + self.close + "\n"
+        return self.high + " / " + self.low + " / " + self.close
 
     def __str__(self) -> str:
-        return self.high + " / " + self.low + " / " + self.close + "\n"
+        return self.high + " / " + self.low + " / " + self.close
 
 @dataclass(frozen = True)
 class CurrencyPairData:
@@ -90,7 +90,7 @@ class CurrencyPairData:
         output : str = ""
         for candle_data in past_5_candles:
             output += candle_data
-        return "\n" + output + "\n"
+        return output
     
 class CandleCache:
     """Necessary for speeding up getting the financial data."""
@@ -108,7 +108,7 @@ class Data(object):
     granularity_cell_multiplier : int = 2 
     red_color = 255 + (80 * 256) + (80 * 256 * 256)
     green_color = 146 + (208 * 256) + (80 * 256 * 256)
-    no_color = 0
+    no_color = 255 + (255 * 256) + (255 * 256 * 256)
 
 
     def __init__(self) -> None:
@@ -127,10 +127,10 @@ class Data(object):
             for granularity in EnvironmentVars.granularities:       #for each granularity      
                 pair_granularities_data : dict[str, CurrencyPairData]
                 candle_data = Data._get_past_OHLC(pair, granularity)
-                candle_data.pop()
                 granularity_pair_data[granularity] = candle_data
             all_financial_data[pair] = granularity_pair_data
         CandleCache.data = all_financial_data
+        CandleCache.cache_exists = True
         return CandleCache.data
 
     #Output example: https://oanda-api-v20.readthedocs.io/en/latest/endpoints/instruments/instrumentlist.html
@@ -165,10 +165,14 @@ class Data(object):
             #Candle will be inserted into the list with the latest candle as the last index.
             #Reverse list so that latest candle will be 0, then -1, -2 so on.
             candles_data.reverse()
+
+            #Delete the last candle[6] once the color of candle[5] has been assigned
+            candles_data.pop()  
+
             return candles_data
         else:
             #if there is existing data cached, only need to update the first candle of each granularity and pair.
-            curr_cached_pair_granularity : list[CandleData] = CandleCache.data[currency_pair][granularity].past_5_candles
+            curr_cached_pair_granularity : list[CandleData] = CandleCache.data[currency_pair][granularity]
             params = {"count" : 1, "granularity" : granularity}
             r = instruments.InstrumentsCandles(instrument=currency_pair, params=params)
             EnvironmentVars.OANDA_CLIENT.request(r)
@@ -176,15 +180,14 @@ class Data(object):
             candledata = raw_candles_data[0]["mid"]
             candle = CandleData(candledata["h"], candledata["l"], candledata["c"])
             #if next candle closed higher than the current high, next candle color is green
-            if i != 0:
-                if curr_cached_pair_granularity[1]["mid"]["h"] < raw_candles_data[0]["mid"]["c"]:
-                    candle.color = "green"
-                elif curr_cached_pair_granularity[1]["mid"]["l"] <= raw_candles_data[0]["mid"]["c"]:
-                    candle.color = "white"
-                else:
-                    candle.color = "red"
-            CandleCache.data[currency_pair][granularity].past_5_candles[0] = candle
-            return CandleCache.data[currency_pair][granularity].past_5_candles
+            if curr_cached_pair_granularity[1].high < raw_candles_data[0]["mid"]["c"]:
+                candle.color = "green"
+            elif curr_cached_pair_granularity[1].low <= raw_candles_data[0]["mid"]["c"]:
+                candle.color = "white"
+            else:
+                candle.color = "red"
+            CandleCache.data[currency_pair][granularity][0] = candle
+            return CandleCache.data[currency_pair][granularity]
             
     @classmethod
     def update_excel_sheet(cls) -> None:
@@ -192,7 +195,6 @@ class Data(object):
         
         # Create an instance of the Excel Application & make it visible.
         ExcelApp = win32com.client.GetActiveObject("Excel.Application")
-        ExcelApp.Visible = True
 
         # Open the desired sheet
         sheet = ExcelApp.Workbooks(1).Worksheets(1)
@@ -205,10 +207,10 @@ class Data(object):
                 for i in range(0, len(data[pairs][granularities])):
                     pair_granularity_data = data[pairs][granularities]
                     sheet.Cells(curr_y + i, curr_x).Value = str(pair_granularity_data[i])
-                    if pair_granularity_data[i].color == "green" : sheet.Cells(curr_y + i, curr_x).Interior.Color = cls.green_color
-                    elif pair_granularity_data[i].color == "red" : sheet.Cells(curr_y + i, curr_x).Interior.Color = cls.red_color
+                    if pair_granularity_data[i].color == "green" : sheet.Cells(curr_y + i, curr_x).Interior.color = cls.green_color
+                    elif pair_granularity_data[i].color == "red" : sheet.Cells(curr_y + i, curr_x).Interior.color = cls.red_color
                     else: sheet.Cells(curr_y + i, curr_x).Interior.Color = cls.no_color
-                    
+        sheet.Cells(1,1).Value = "Last Updated : \n" + datetime.now().strftime("%H%MHRS, %SSEC")
                 # set the value property equal to the record array.
                 #ExcelApp.Range("F2:I5").Interior.ColorIndex = 3;
 
